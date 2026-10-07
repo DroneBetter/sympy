@@ -2677,17 +2677,12 @@ def _eval_stirling1(n, k):
     elif k == n - 3:
         return binomial(n, 2)*binomial(n, 4)
 
-    return _stirling1(n, k)
+    return Integer(_stirling1(n, k))
 
 
 @cacheit
-def _stirling1(n, k):
-    row = [0, 1]+[0]*(k-1) # for n = 1
-    for i in range(2, n+1):
-        for j in range(min(k,i), 0, -1):
-            row[j] = (i-1) * row[j] + row[j-1]
-    return Integer(row[k])
-
+def _stirling1(n,k):
+    return int(n>=k and (n-1)*_stirling1(n-1,k) + _stirling1(n-1,k-1) if k else n==0)
 
 def _eval_stirling2(n, k):
     if n == k == 0:
@@ -2705,16 +2700,12 @@ def _eval_stirling2(n, k):
     elif k == 2:
         return Integer(2**(n - 1) - 1)
 
-    return _stirling2(n, k)
+    return Integer(_stirling2(n, k))
 
 
 @cacheit
 def _stirling2(n, k):
-    row = [0, 1]+[0]*(k-1) # for n = 1
-    for i in range(2, n+1):
-        for j in range(min(k,i), 0, -1):
-            row[j] = j * row[j] + row[j-1]
-    return Integer(row[k])
+    return int(n>=k and k*_stirling1(n-1,k) + _stirling1(n-1,k-1) if k else n==0)
 
 
 def stirling(n, k, d=None, kind=2, signed=False):
