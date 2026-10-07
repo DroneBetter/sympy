@@ -7,7 +7,7 @@ Factorials, binomial coefficients and related functions are located in
 the separate 'factorials' module.
 """
 from __future__ import annotations
-from math import prod
+from math import prod,isqrt,comb
 from collections import defaultdict
 from typing import Callable
 
@@ -2660,6 +2660,24 @@ def nC(n, k=None, replacement=False):
     else:
         return nC(_multiset_histogram(n), k, replacement)
 
+def _pth_powers(p,n):
+    '''
+    yields the p-th powers of [1..n]
+    faster than map(lambda k: k**p,range(1,n+1)) when p is very large
+    '''
+    spf=list(range(n+1))
+    for q in range(2,(s:=isqrt(n))+1):
+        if spf[q]==q:
+            for k in range(q*q,n+1,q):
+                if spf[k]==k: spf[k]=q
+    a=[0]*(n+2>>1)
+    #yield 1
+    if n>1:
+        a[1]=1
+        for k in range(2,n+1):
+            x=pow(k,p) if (q:=spf[k])==k else a[k//q]*a[q]
+            if k<=n>>1: a[k]=x
+            yield k,x
 
 def _eval_stirling1(n, k):
     if n == k == 0:
@@ -2677,17 +2695,12 @@ def _eval_stirling1(n, k):
     elif k == n - 3:
         return binomial(n, 2)*binomial(n, 4)
 
-    return _stirling1(n, k)
+    return Integer(_stirling1(n, k))
 
 
 @cacheit
-def _stirling1(n, k):
-    row = [0, 1]+[0]*(k-1) # for n = 1
-    for i in range(2, n+1):
-        for j in range(min(k,i), 0, -1):
-            row[j] = (i-1) * row[j] + row[j-1]
-    return Integer(row[k])
-
+def _stirling1(n,k):
+    return int(n>=k and ((n-1)*_stirling1(n-1,k) + _stirling1(n-1,k-1) if n<=500 else (r:=(-1)**(k+n)*comb(2*n-k,n-k)*comb(n,k)*k)*(n==k)//n+sum((r:=r*(n-k-i+1)//(k-n-i))//(i+n)*_stirling2(i+n-k,i) for i in range(1,n-k+1))) if k else n==0)
 
 def _eval_stirling2(n, k):
     if n == k == 0:
@@ -2705,16 +2718,12 @@ def _eval_stirling2(n, k):
     elif k == 2:
         return Integer(2**(n - 1) - 1)
 
-    return _stirling2(n, k)
+    return Integer(_stirling2(n, k))
 
 
 @cacheit
 def _stirling2(n, k):
-    row = [0, 1]+[0]*(k-1) # for n = 1
-    for i in range(2, n+1):
-        for j in range(min(k,i), 0, -1):
-            row[j] = j * row[j] + row[j-1]
-    return Integer(row[k])
+    return int(n>=k and (k*_stirling2(n-1,k) + _stirling2(n-1,k-1) if n<=500 else ((c:=(-1)**(k-1))+sum((c:=c*(i+~k)//(i-1))*p for i,p in _pth_powers(n-1,k)))//factorial(k-1)) if k else n==0)
 
 
 def stirling(n, k, d=None, kind=2, signed=False):
